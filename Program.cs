@@ -1,4 +1,3 @@
-// Main entry point for the API. Uses .NET 8 Minimal APIs for simplicity.
 var builder = WebApplication.CreateBuilder(args);
 
 // --- Service Configuration ---
@@ -15,7 +14,7 @@ builder.Services.AddScoped<IJudgeService, JudgeService>();
 
 var app = builder.Build();
 
-// --- Middleware Pipeline ---
+// --- Middleware  ---
 app.UseCors("AllowAll");
 
 // --- API Endpoints ---
