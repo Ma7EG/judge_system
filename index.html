@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPJS - Sum of Two Numbers</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --surface-color: #2c2c2c;
+            --primary-color: #007bff;
+            --text-color: #e0e0e0;
+            --border-color: #444;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: "Courier New", Courier, monospace;
+            --verdict-accepted: #28a745;
+            --verdict-wrong: #dc3545;
+            --verdict-error: #ffc107;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .problem-card, .submission-card {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        h1, h2 {
+            margin-top: 0;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+        .constraints {
+            background-color: #333;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+        }
+        #code-editor {
+            width: 100%;
+            height: 300px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            padding: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        .submit-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1rem;
+            width: 100%;
+        }
+        .submit-btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+        #result.accepted { background-color: var(--verdict-accepted); }
+        #result.wrong-answer { background-color: var(--verdict-wrong); }
+        #result.error { background-color: var(--verdict-error); color: #111; }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <section class="problem-card">
+            <h1 id="problem-title">Loading...</h1>
+            <p id="problem-statement"></p>
+            <h2>Constraints</h2>
+            <div id="problem-constraints" class="constraints"></div>
+        </section>
+        <section class="submission-card">
+            <h2>Submit Your Solution (C#)</h2>
+            <form id="submission-form">
+                <textarea id="code-editor"></textarea>
+                <button type="submit" id="submit-button" class="submit-btn">Submit</button>
+            </form>
+            <div id="result"></div>
+        </section>
+    </main>
+    <script>
+        const API_URL = 'http://localhost:5000';
+        const PROBLEM_ID = 1;
+
+        const problemTitle = document.getElementById('problem-title');
+        const problemStatement = document.getElementById('problem-statement');
+        const problemConstraints = document.getElementById('problem-constraints');
+        const submissionForm = document.getElementById('submission-form');
+        const codeEditor = document.getElementById('code-editor');
+        const submitButton = document.getElementById('submit-button');
+        const resultDiv = document.getElementById('result');
+
+        codeEditor.value = 
+`using System;
+
+public class Solution 
+{
+    public static void Main(string[] args) 
+    {
+        string[] line = Console.ReadLine().Split(' ');
+        int a = int.Parse(line[0]);
+        int b = int.Parse(line[1]);
+        Console.WriteLine(a + b);
+    }
+}`;
+
+        async function loadProblem() {
+            try {
+                const response = await fetch(`${API_URL}/api/problem/${PROBLEM_ID}`);
+                const problem = await response.json();
+                problemTitle.textContent = problem.title;
+                problemStatement.textContent = problem.statement;
+                problemConstraints.textContent = problem.constraints;
+            } catch (error) {
+                problemTitle.textContent = 'Error';
+                problemStatement.textContent = 'Could not load problem. Is the backend running?';
+            }
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            submitButton.disabled = true;
+            submitButton.textContent = 'Judging...';
+            resultDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/api/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ problemId: PROBLEM_ID, code: codeEditor.value })
+                });
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                displayResult({ verdict: 'Network Error: Could not connect to the judge.' });
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit';
+            }
+        }
+
+        function displayResult(result) {
+            let message = `Verdict: ${result.verdict}`;
+            resultDiv.className = '';
+            if (result.verdict === 'Accepted') {
+                message += ` (Time: ${result.executionTimeMs} ms)`;
+                resultDiv.classList.add('accepted');
+            } else if (result.verdict === 'Wrong Answer') {
+                resultDiv.classList.add('wrong-answer');
+            } else {
+                resultDiv.classList.add('error');
+            }
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProblem);
+        submissionForm.addEventListener('submit', handleSubmit);
+    </script>
+</body>
+</html>
