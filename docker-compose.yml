@@ -7,9 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: cpjs-api
     ports:
-      # Map port 5000 on the host to port 8080 in the container.
       - "5000:8080"
     restart: unless-stopped
     environment:
-      # Tell ASP.NET Core to listen on the container's port 8080
       - ASPNETCORE_URLS=http://+:8080
